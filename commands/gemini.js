@@ -2,21 +2,26 @@ const axios = require('axios');
 
 module.exports = {
   name: 'gemini',
-  description: 'Ask a question to Gemini',
-  author: 'Deku (rest api)',
+  description: 'Ask a question to the Gemini AI',
+  author: 'ChatGPT',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
     try {
+      sendMessage(senderId, { text: '💬 | 𝙰𝚗𝚜𝚠𝚎𝚛𝚒𝚗𝚐...' }, pageAccessToken);
+
+      // Define the API URL and parameters
       const apiUrl = `https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&uid=100${senderId}`;
+
+      // Make the API request
       const response = await axios.get(apiUrl);
 
-      // Check if gpt4 response exists
+      // Extract the response text (assuming it's in `response.data.gpt4`)
       const text = response.data?.gpt4;
       if (!text) {
         throw new Error("No response text found in API response");
       }
-      
-      // Split response if it exceeds max length
+
+      // Split the response into chunks if it exceeds 2000 characters
       const maxMessageLength = 2000;
       if (text.length > maxMessageLength) {
         const messages = splitMessageIntoChunks(text, maxMessageLength);
