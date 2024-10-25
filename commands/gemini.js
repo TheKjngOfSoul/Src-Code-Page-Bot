@@ -1,30 +1,34 @@
-
-const { callGeminiAPI } = require('../utils/callGeminiAPI');
 const axios = require('axios');
+
 module.exports = {
   name: 'gemini',
   description: 'Ask a question to Gemini',
   author: 'Deku (rest api)',
   async execute(senderId, args, pageAccessToken, sendMessage) {
-    const prompt = args.join( );
+    const prompt = args.join(' ');
     try {
       const apiUrl = `https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&uid=100${senderId}`;
       const response = await axios.get(apiUrl);
-      const text = response.data.gpt4;
+
+      // Check if gpt4 response exists
+      const text = response.data?.gpt4;
+      if (!text) {
+        throw new Error("No response text found in API response");
+      }
       
-      // Split the response into chunks if it exceeds 2000 characters
+      // Split response if it exceeds max length
       const maxMessageLength = 2000;
-      if (response.length > maxMessageLength) {
-        const messages = splitMessageIntoChunks(response, maxMessageLength);
+      if (text.length > maxMessageLength) {
+        const messages = splitMessageIntoChunks(text, maxMessageLength);
         for (const message of messages) {
           sendMessage(senderId, { text: message }, pageAccessToken);
         }
       } else {
-        sendMessage(senderId, { text: response }, pageAccessToken);
+        sendMessage(senderId, { text }, pageAccessToken);
       }
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
-      sendMessage(senderId, { text: '.' }, pageAccessToken);
+      console.error('Error calling Gemini API:', error.message);
+      sendMessage(senderId, { text: 'There was an error processing your request. Please try again later.' }, pageAccessToken);
     }
   }
 };
