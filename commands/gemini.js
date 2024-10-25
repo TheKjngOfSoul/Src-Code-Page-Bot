@@ -2,46 +2,39 @@ const axios = require('axios');
 
 module.exports = {
   name: 'gemini',
-  description: 'Ask a question to the Gemini AI',
-  author: 'ChatGPT',
+  description: 'Talk to Gemini (conversational)',
+  author: 'Deku',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
-    try {
-      sendMessage(senderId, { text: '💬 | 𝙰𝚗𝚜𝚠𝚎𝚛𝚒𝚗𝚐...' }, pageAccessToken);
+    
+    // Check if there's input text
+    if (!prompt) {
+      return sendMessage(senderId, { text: 'Please enter a prompt.' }, pageAccessToken);
+    }
 
-      // Define the API URL and parameters
+    try {
+      // Indicate that the request is being processed
+      sendMessage(senderId, { text: '✨ | Processing your request...' }, pageAccessToken);
+
+      // Define the API URL and handle photo reply logic
       const apiUrl = `https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&uid=100${senderId}`;
 
-      // Make the API request
+      // Check if the event is a reply to a photo message
+      if (args.reply && args.reply.attachments[0]?.type === 'photo') {
+        const url = encodeURIComponent(args.reply.attachments[0].url);
+        const response = await axios.get(`${apiUrl}&url=${url}`);
+        const text = response.data?.gpt4 || 'No response from Gemini.';
+        return sendMessage(senderId, { text }, pageAccessToken);
+      } 
+
+      // If there's no photo reply, send the prompt only
       const response = await axios.get(apiUrl);
+      const text = response.data?.gpt4 || 'No response from Gemini.';
+      return sendMessage(senderId, { text }, pageAccessToken);
 
-      // Extract the response text (assuming it's in `response.data.gpt4`)
-      const text = response.data?.gpt4;
-      if (!text) {
-        throw new Error("No response text found in API response");
-      }
-
-      // Split the response into chunks if it exceeds 2000 characters
-      const maxMessageLength = 2000;
-      if (text.length > maxMessageLength) {
-        const messages = splitMessageIntoChunks(text, maxMessageLength);
-        for (const message of messages) {
-          sendMessage(senderId, { text: message }, pageAccessToken);
-        }
-      } else {
-        sendMessage(senderId, { text }, pageAccessToken);
-      }
     } catch (error) {
-      console.error('Error calling Gemini API:', error.message);
-      sendMessage(senderId, { text: 'There was an error processing your request. Please try again later.' }, pageAccessToken);
+      console.error('Error calling Gemini API:', error.response?.data || error.message);
+      return sendMessage(senderId, { text: 'There was an error processing your request. Please try again later.' }, pageAccessToken);
     }
   }
 };
-
-function splitMessageIntoChunks(message, chunkSize) {
-  const chunks = [];
-  for (let i = 0; i < message.length; i += chunkSize) {
-    chunks.push(message.slice(i, i + chunkSize));
-  }
-  return chunks;
-}
