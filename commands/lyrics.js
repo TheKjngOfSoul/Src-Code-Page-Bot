@@ -15,7 +15,7 @@ module.exports = {
         const lyricsMessage = `Title: ${result.title}\nArtist: ${result.artist}\n\n${result.lyrics}`;
 
         // Split the lyrics message into chunks if it exceeds 2000 characters
-        const maxMessageLength = 2000;
+        const maxMessageLength = 200;
         if (lyricsMessage.length > maxMessageLength) {
           const messages = splitMessageIntoChunks(lyricsMessage, maxMessageLength);
           for (const message of messages) {
