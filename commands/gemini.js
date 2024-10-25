@@ -8,7 +8,7 @@ module.exports = {
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join( );
     try {
-      const apiUrl = `https://joshweb.click/gemini?prompt=describe this photo&url=${encodeURIComponent(prompt)}&uid=100${senderId}`;
+      const apiUrl = `https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&uid=100${senderId}`;
       const response = await axios.get(apiUrl);
       const text = response.data.gpt4;
       
