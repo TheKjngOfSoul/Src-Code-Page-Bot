@@ -3,24 +3,30 @@ const { sendMessage } = require('../handles/sendMessage');
 
 module.exports = {
   name: 'random',
-  description: 'Generates an image based on prompt',
+  description: 'Generates an image or video',
   author: 'DP',
   async execute(senderId, args, pageAccessToken) {
-    if (!args || !Array.isArray(args) || args.length === 0) {
-      await sendMessage(senderId, { text: 'Please provide a prompt for image generation.' }, pageAccessToken);
-      return;
-    }
-
-    const prompt = args.join(' ');
+    const apiUrl = `https://joshweb.click/api/randhntai`;
 
     try {
-      const apiUrl = `https://joshweb.click/api/randhntai${encodeURIComponent(prompt)}`;
+      // Fetch the generated media
+      const response = await axios.get(apiUrl, { responseType: 'json' });
 
-      await sendMessage(senderId, { attachment: { type: 'video', payload: { url: apiUrl } } }, pageAccessToken);
+      if (response.data && response.data.url) {
+        // Send the video or image URL to the user
+        await sendMessage(senderId, { 
+          attachment: { 
+            type: 'video', 
+            payload: { url: response.data.url } 
+          } 
+        }, pageAccessToken);
+      } else {
+        await sendMessage(senderId, { text: 'Error: No media found.' }, pageAccessToken);
+      }
 
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Error: Could not generate image.' }, pageAccessToken);
+      console.error('Error:', error.message);
+      await sendMessage(senderId, { text: 'Error: Could not generate video or image.' }, pageAccessToken);
     }
   }
 };
