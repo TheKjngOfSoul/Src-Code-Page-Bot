@@ -14,7 +14,7 @@ module.exports = {
     const prompt = args.join(' ');
 
     try {
-      const apiUrl = `https://nethwieginedev.vercel.app/flux?q=dragon${encodeURIComponent(prompt)}`;
+      const apiUrl = `https://nethwieginedev.vercel.app/flux?q=${encodeURIComponent(prompt)}`;
 
       await sendMessage(senderId, { attachment: { type: 'image', payload: { url: apiUrl } } }, pageAccessToken);
 
