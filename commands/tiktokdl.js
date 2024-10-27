@@ -1,5 +1,4 @@
 const axios = require('axios');
-const fs = require('fs');
 const { sendMessage } = require('../handles/sendMessage');
 
 module.exports = {
@@ -26,5 +25,24 @@ module.exports = {
         return;
       }
 
-      // Download the video file
-      const videoResponse = await axios.get(videoDownloadUrl, { response
+      // Download the video as a buffer
+      const videoResponse = await axios.get(videoDownloadUrl, { responseType: 'arraybuffer' });
+      const videoBuffer = Buffer.from(videoResponse.data, 'binary');
+
+      // Send the video as an attachment
+      await sendMessage(senderId, {
+        attachment: {
+          type: 'video',
+          payload: {
+            is_reusable: true
+          }
+        },
+        filedata: videoBuffer
+      }, pageAccessToken);
+
+    } catch (error) {
+      console.error('Error:', error.message);
+      await sendMessage(senderId, { text: 'Error: Could not retrieve or send video.' }, pageAccessToken);
+    }
+  }
+};
