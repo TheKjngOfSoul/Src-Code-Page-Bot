@@ -3,7 +3,7 @@ const { sendMessage } = require('../handles/sendMessage');
 
 module.exports = {
   name: 'random',
-  description: 'Generates a random video from the API',
+  description: 'Generates a random video link from the API',
   author: 'DP',
   async execute(senderId, args, pageAccessToken) {
     const apiUrl = `https://joshweb.click/api/randhntai`;
@@ -20,12 +20,9 @@ module.exports = {
 
         console.log('Selected Video:', randomVideo.video_1); // Log the selected video URL
 
-        // Send the video URL to the user
+        // Send a simple text message with a clickable link to the video
         await sendMessage(senderId, { 
-          attachment: { 
-            type: 'video', 
-            payload: { url: randomVideo.video_1 } 
-          } 
+          text: `Here’s a random video for you:\n\n*Title:* ${randomVideo.title}\n*Category:* ${randomVideo.category}\n*Views:* ${randomVideo.views_count}\n*Link:* ${randomVideo.video_1}`
         }, pageAccessToken);
       } else {
         await sendMessage(senderId, { text: 'Error: No videos found in the response.' }, pageAccessToken);
