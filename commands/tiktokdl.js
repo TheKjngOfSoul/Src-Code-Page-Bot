@@ -31,19 +31,25 @@ module.exports = {
 
       // Prepare the form data for uploading to Facebook
       const formData = new FormData();
-      formData.append('filedata', videoResponse.data, { filename: 'tiktok_video.mp4', contentType: 'video/mp4' });
       formData.append('recipient', JSON.stringify({ id: senderId }));
       formData.append('message', JSON.stringify({ attachment: { type: 'video', payload: {} } }));
+      formData.append('filedata', videoResponse.data, { filename: 'tiktok_video.mp4', contentType: 'video/mp4' });
 
       // Send the video to Facebook
-      await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`, formData, {
-        headers: {
-          ...formData.getHeaders()
+      const fbResponse = await axios.post(
+        `https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+          },
         }
-      });
+      );
 
+      console.log('Video sent successfully:', fbResponse.data);
     } catch (error) {
-      console.error('Error:', error.message);
+      console.error('Error:', error.response ? error.response.data : error.message);
       await sendMessage(senderId, { text: 'Error: Could not retrieve or send video.' }, pageAccessToken);
     }
   }
