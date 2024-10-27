@@ -3,30 +3,33 @@ const { sendMessage } = require('../handles/sendMessage');
 
 module.exports = {
   name: 'random',
-  description: 'Generates an image or video',
+  description: 'Generates a random video from the API',
   author: 'DP',
   async execute(senderId, args, pageAccessToken) {
     const apiUrl = `https://joshweb.click/api/randhntai`;
 
     try {
-      // Fetch the generated media
+      // Fetch the response from the API
       const response = await axios.get(apiUrl, { responseType: 'json' });
 
-      if (response.data && response.data.url) {
-        // Send the video or image URL to the user
+      if (response.data && response.data.result && response.data.result.length > 0) {
+        // Select a random video from the result array
+        const randomVideo = response.data.result[Math.floor(Math.random() * response.data.result.length)];
+
+        // Send the video URL to the user
         await sendMessage(senderId, { 
           attachment: { 
             type: 'video', 
-            payload: { url: response.data.url } 
+            payload: { url: randomVideo.video_1 } 
           } 
         }, pageAccessToken);
       } else {
-        await sendMessage(senderId, { text: 'Error: No media found.' }, pageAccessToken);
+        await sendMessage(senderId, { text: 'Error: No videos found in the response.' }, pageAccessToken);
       }
 
     } catch (error) {
       console.error('Error:', error.message);
-      await sendMessage(senderId, { text: 'Error: Could not generate video or image.' }, pageAccessToken);
+      await sendMessage(senderId, { text: 'Error: Could not retrieve video.' }, pageAccessToken);
     }
   }
 };
