@@ -1,4 +1,5 @@
 const axios = require('axios');
+const FormData = require('form-data');
 const { sendMessage } = require('../handles/sendMessage');
 
 module.exports = {
@@ -25,20 +26,21 @@ module.exports = {
         return;
       }
 
-      // Download the video as a buffer
-      const videoResponse = await axios.get(videoDownloadUrl, { responseType: 'arraybuffer' });
-      const videoBuffer = Buffer.from(videoResponse.data, 'binary');
+      // Download the video as a stream
+      const videoResponse = await axios.get(videoDownloadUrl, { responseType: 'stream' });
 
-      // Send the video as an attachment
-      await sendMessage(senderId, {
-        attachment: {
-          type: 'video',
-          payload: {
-            is_reusable: true
-          }
-        },
-        filedata: videoBuffer
-      }, pageAccessToken);
+      // Prepare the form data for uploading to Facebook
+      const formData = new FormData();
+      formData.append('filedata', videoResponse.data, { filename: 'tiktok_video.mp4', contentType: 'video/mp4' });
+      formData.append('recipient', JSON.stringify({ id: senderId }));
+      formData.append('message', JSON.stringify({ attachment: { type: 'video', payload: {} } }));
+
+      // Send the video to Facebook
+      await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`, formData, {
+        headers: {
+          ...formData.getHeaders()
+        }
+      });
 
     } catch (error) {
       console.error('Error:', error.message);
