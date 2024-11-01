@@ -1,35 +1,48 @@
 const axios = require('axios');
+const fs = require('fs');
 const { sendMessage } = require('../handles/sendMessage');
 
+const token = fs.readFileSync('token.txt', 'utf8');
+
 module.exports = {
-  name: 'gpt4',
-  description: 'Interact with GPT-4 Turbo.',
-  usage: 'gpt4 [your message]',
+  name: 'gpt',
+  description: 'Interact with the GPT-4o API',
+  usage: '-gpt [hello!]',
   author: 'coffee',
 
-  async execute(senderId, args, pageAccessToken) {
-    const prompt = args.join(' ');
-    if (!prompt) return sendMessage(senderId, { text: "Usage: gpt4 <your prompt>" }, pageAccessToken);
+  async execute(senderId, args) {
+    const input = this.parseInput(args);
+    if (!input) {
+      return await this.sendError(senderId, 'Error: Missing input!');
+    }
 
     try {
-      const { data } = await axios.get(`https://ryuu-rest-apis.onrender.com/api/gpt-4-turbo?q=${encodeURIComponent(prompt)}&id=${senderId}`);
-      const content = JSON.parse(data.content);
-      const imageUrl = content.match(/!image(.*?)/)?.[1];
-
-      if (!imageUrl) return sendMessage(senderId, { text: 'No image found in the response.' }, pageAccessToken);
-
-      const { data: imageBuffer } = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const { data: uploadResponse } = await axios.post('https://api.imgur.com/3/image', {
-        image: imageBuffer.toString('base64'),
-        type: 'base64'
-      }, { headers: { Authorization: 'Client-ID 7f22d7191831cfc' } });
-
-      await sendMessage(senderId, { text: content.prompt }, pageAccessToken);
-      await sendMessage(senderId, { attachment: { type: 'image', payload: { url: uploadResponse.data.data.link } } }, pageAccessToken);
-      
+      const response = await this.fetchGPT4OResponse(input);
+      await sendMessage(senderId, { text: this.formatResponse(response) }, token);
     } catch (error) {
-      console.error('Error:', error);
-      sendMessage(senderId, { text: 'Error: Could not generate or upload image.' }, pageAccessToken);
+      console.error('Error processing input:', error);
+      await this.sendError(senderId, 'Error: Unexpected error occurred while processing the input.');
     }
+  },
+
+  parseInput(args) {
+    return Array.isArray(args) && args.length > 0 ? args.join(' ').trim() : null;
+  },
+
+  async fetchGPT4OResponse(input) {
+    const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
+    const { data } = await axios.get(apiUrl);
+    return data;
+  },
+
+  formatResponse(data) {
+    if (data.status) {
+      return `🗨️ | 𝙶𝙿𝚃 [㊗️] \n・───────────・\n${data.response || 'No response provided.'}\n・──── >ᴗ< ────・`;
+    }
+    return 'Error: Unable to fetch response.';
+  },
+
+  async sendError(senderId, errorMessage) {
+    await sendMessage(senderId, { text: errorMessage }, token);
   }
 };
